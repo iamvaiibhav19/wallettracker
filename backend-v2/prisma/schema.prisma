@@ -32,21 +32,6 @@ model User {
   otps         Otp[]
   sessions     Session[]
 }
-
-model User {
-  id           String        @id @default(uuid())
-  name         String?
-  email        String        @unique
-  password     String?       // Nullable: Optional if using OTP only
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  currency     String?       // Added currency field
-  accounts     Account[]     // User's bank accounts
-  transactions Transaction[] // User's transactions
-  otps         Otp[]         // OTPs for user
-  sessions     Session[]     // User's active sessions
-}
-
 model Account {
   id          String        @id @default(uuid())
   name        String
