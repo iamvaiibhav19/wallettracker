@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { sendEmail } from "./utils/mailer";
 import logger from "./utils/logger";
+import routes from "./routes/index";
+import { setupSwagger } from "./utils/swagger";
 
 dotenv.config();
 
@@ -10,6 +12,12 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Swagger UI documentation
+setupSwagger(app);
+
+// Routes
+app.use("/api/v2", routes);
 
 // Health check route
 app.get("/", (_req, res) => {

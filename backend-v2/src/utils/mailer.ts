@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import logger from "./logger";
 
-export const sendEmail = async (emails: string[], subject: string, body: string) => {
+export const sendEmail = async (emails: string[], subject: string, template: string) => {
   // ENV variables
   const host = process.env.EMAIL_HOST;
   const port = parseInt(process.env.EMAIL_PORT!);
@@ -24,7 +24,7 @@ export const sendEmail = async (emails: string[], subject: string, body: string)
     from: `Wallet Tracker <${user}>`,
     to: emails.join(", "),
     subject,
-    text: body,
+    html: template,
   };
 
   try {
