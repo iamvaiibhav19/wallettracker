@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { requestOtp, validateToken, verifyOtp } from "../controllers/auth.controller";
-import { authenticate, AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { requestOtp, validateToken, verifyOtp } from "../../controllers/auth/auth.controller";
+import { authenticate, AuthenticatedRequest } from "../../middlewares/auth.middleware";
 
 const router = Router();
 

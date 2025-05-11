@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 
-import { sendEmail } from "../utils/mailer";
+import { sendEmail } from "../../utils/mailer";
 import crypto from "crypto";
-import { otpTemplate } from "../templates/otpTemplate";
-import { prisma } from "../models/prismaClient";
-import logger from "../utils/logger";
-import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { otpTemplate } from "../../templates/otpTemplate";
+import { prisma } from "../../models/prismaClient";
+import logger from "../../utils/logger";
+import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
 
 /**
  * @swagger
@@ -179,11 +179,15 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
     });
     logger.info(`Session token created for user: ${email}`);
 
+    // After session token is created
+    const isFirstTimeUser = !user.currency;
+
     // 7. Respond with token
     res.status(200).json({
       message: "OTP verified successfully",
       token,
       expiresAt,
+      onboardingRequired: isFirstTimeUser,
     });
   } catch (err: any) {
     logger.error(`OTP verification failed for ${email}: ${err.message}`);

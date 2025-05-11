@@ -7,6 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Currency {
+  USD
+  EUR
+  INR
+  GBP
+  JPY
+  AUD
+  CAD
+  CNY
+  // Add more as needed
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String?
+  email        String        @unique
+  password     String?
+  currency     Currency?     // 👈 use enum here
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  accounts     Account[]
+  transactions Transaction[]
+  otps         Otp[]
+  sessions     Session[]
+}
+
 model User {
   id           String        @id @default(uuid())
   name         String?
@@ -14,10 +40,11 @@ model User {
   password     String?       // Nullable: Optional if using OTP only
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  accounts     Account[]
-  transactions Transaction[]
-  otps         Otp[]
-  sessions     Session[]
+  currency     String?       // Added currency field
+  accounts     Account[]     // User's bank accounts
+  transactions Transaction[] // User's transactions
+  otps         Otp[]         // OTPs for user
+  sessions     Session[]     // User's active sessions
 }
 
 model Account {
@@ -29,7 +56,7 @@ model Account {
   updatedAt   DateTime      @updatedAt
   userId      String
   user        User          @relation(fields: [userId], references: [id])
-  transactions Transaction[]
+  transactions Transaction[] // Transactions for this account
 }
 
 model Transaction {
