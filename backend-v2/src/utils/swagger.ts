@@ -14,12 +14,26 @@ const swaggerDefinition = {
       url: `${process.env.BASE_URL || "http://localhost:8000"}`,
     },
   ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
+  },
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
 };
 
 // Options for swagger-jsdoc
 const options = {
   swaggerDefinition,
-  apis: ["./src/routes/*.ts", "./src/controllers/*.ts"],
+  apis: ["./src/routes/*.ts", "./src/controllers/*.ts", "./src/middlewares/*.ts"],
 };
 
 // Initialize swagger-jsdoc

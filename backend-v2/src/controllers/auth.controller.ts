@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { otpTemplate } from "../templates/otpTemplate";
 import { prisma } from "../models/prismaClient";
 import logger from "../utils/logger";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 
 /**
  * @swagger
@@ -187,5 +188,26 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
   } catch (err: any) {
     logger.error(`OTP verification failed for ${email}: ${err.message}`);
     res.status(401).json({ error: err.message });
+  }
+};
+
+// Function to validate the token
+export const validateToken = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
+  try {
+    if (!req.user) {
+      logger.warn("User not authenticated");
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    res.status(200).json({
+      message: `Welcome, ${req.user.email}`,
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+      },
+    });
+  } catch (err: any) {
+    logger.error(`Error fetching user: ${err.message}`);
+    res.status(500).json({ error: err.message });
   }
 };

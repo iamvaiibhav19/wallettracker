@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requestOtp, verifyOtp } from "../controllers/auth.controller";
+import { requestOtp, validateToken, verifyOtp } from "../controllers/auth.controller";
+import { authenticate, AuthenticatedRequest } from "../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -7,5 +8,7 @@ const router = Router();
 router.post("/request-otp", requestOtp);
 // Verify OTP
 router.post("/verify-otp", verifyOtp);
+// Validate token
+router.get("/protected", authenticate, validateToken);
 
 export default router;
