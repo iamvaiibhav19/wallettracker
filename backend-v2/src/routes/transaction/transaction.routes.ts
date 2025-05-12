@@ -1,21 +1,37 @@
 import { Router } from "express";
-import { createTransaction, deleteTransaction, getTransactionById, getTransactions, updateTransaction } from "../../controllers/transaction/transaction.controller";
+import {
+  createTransaction,
+  deleteAllTransactions,
+  deleteTransaction,
+  deleteTransactions,
+  getTransactionById,
+  getTransactions,
+  updateTransaction,
+} from "../../controllers/transaction/transaction.controller";
+import { validateInput } from "../../middlewares/validateInput";
+import { createTransactionSchema } from "../../schemas/transaction.schema";
 
 const router = Router();
 
-// Create Account
-router.post("/create", createTransaction);
+// Create Transaction
+router.post("/create", validateInput(createTransactionSchema), createTransaction);
 
-// Get Account by ID
+// Get Transaction by ID
 router.get("/:id", getTransactionById);
 
-// Get All Accounts
+// Get All Transactions
 router.get("/", getTransactions);
 
-// Update Account
+// Update Transaction by ID
 router.put("/:id", updateTransaction);
 
-// Delete Account
+// Delete Transaction by ID
 router.delete("/:id", deleteTransaction);
+
+// Delete Multiple Transactions
+router.delete("/delete/multiple", deleteTransactions);
+
+// Delete All Transactions
+router.delete("/delete/all", deleteAllTransactions);
 
 export default router;
