@@ -33,6 +33,7 @@ const swaggerDefinition = {
 // Options for swagger-jsdoc
 const options = {
   swaggerDefinition,
+  cache: false,
   apis: ["./src/routes/**/*.ts", "./src/controllers/**/*.ts", "./src/middlewares/**/*.ts"],
 };
 

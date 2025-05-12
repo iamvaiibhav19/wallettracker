@@ -112,7 +112,7 @@ import { TransactionType } from "@prisma/client";
  */
 
 export const createTransaction = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
-  const { amount, type, category, description, accountId, destinationAccountId, targetName, reminderDate } = req.body;
+  const { amount, type, categoryId, description, accountId, destinationAccountId, targetName, reminderDate } = req.body;
 
   try {
     let updatedAccountBalance: number | null = null;
@@ -178,7 +178,7 @@ export const createTransaction = async (req: AuthenticatedRequest, res: Response
       data: {
         amount,
         type,
-        category,
+        categoryId,
         description,
         date: new Date(),
         accountId,
@@ -351,7 +351,7 @@ export const getTransactionById = async (req: AuthenticatedRequest, res: Respons
  */
 export const updateTransaction = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   const { id } = req.params;
-  const { amount, type, category, description, accountId, destinationAccountId, targetName, reminderDate } = req.body;
+  const { amount, type, categoryId, description, accountId, destinationAccountId, targetName, reminderDate } = req.body;
 
   try {
     // Find the transaction
@@ -409,7 +409,7 @@ export const updateTransaction = async (req: AuthenticatedRequest, res: Response
       data: {
         amount,
         type,
-        category,
+        categoryId,
         description,
         targetName,
         reminderDate,

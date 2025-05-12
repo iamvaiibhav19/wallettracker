@@ -1,9 +1,10 @@
 import { Router } from "express";
+import { authenticate } from "../middlewares/auth.middleware";
 import authRoutes from "./auth/auth.routes";
 import userRoutes from "./auth/user.routes";
 import accountRoutes from "./account/account.routes";
-import { authenticate } from "../middlewares/auth.middleware";
 import transactionRoutes from "./transaction/transaction.routes";
+import categoryRoutes from "./category/category.routes";
 
 const router = Router();
 
@@ -18,5 +19,8 @@ router.use("/accounts", authenticate, accountRoutes);
 
 // Transaction routes
 router.use("/transactions", authenticate, transactionRoutes);
+
+// Category routes
+router.use("/categories", authenticate, categoryRoutes);
 
 export default router;

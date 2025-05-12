@@ -23,7 +23,7 @@ router.get("/:id", getTransactionById);
 router.get("/", getTransactions);
 
 // Update Transaction by ID
-router.put("/:id", updateTransaction);
+router.put("/:id", validateInput(createTransactionSchema), updateTransaction);
 
 // Delete Transaction by ID
 router.delete("/:id", deleteTransaction);
