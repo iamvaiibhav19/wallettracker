@@ -7,6 +7,7 @@ import OtpInput from "react-otp-input";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import requestOTP from "@/config/api/axios/Auth/requestOTP";
 
 const OTPInputForm = ({
   email,
@@ -56,7 +57,7 @@ const OTPInputForm = ({
     }
 
     try {
-      // const data = await sendOTP(email);
+      const data = await requestOTP(email);
 
       setLoadingResend(false);
       setEnableResend(false);
@@ -86,7 +87,7 @@ const OTPInputForm = ({
       </div> */}
       <div className="transition-all duration-500">
         <label htmlFor="OTP" className="text-sm font-medium">
-          OTP
+          OTP {<span className="text-destructive">*</span>}
         </label>
         <div className="flex flex-wrap gap-2">
           <div>
@@ -109,7 +110,7 @@ const OTPInputForm = ({
               shouldAutoFocus={true}
             />
 
-            <button type="button" className="text-sm text-primary " onClick={handleResendOTP} disabled={!enableResend}>
+            <button type="button" className="text-sm text-primary cursor-pointer" onClick={handleResendOTP} disabled={!enableResend}>
               {/* {loadingResend ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function AuthenticationPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
-      <Card className="w-max m-auto bg-background shadow-md relative bottom-6">
+      <Card className=" m-auto mx-2 bg-background shadow-md relative bottom-6">
         <div className="lg:p-8">
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
             <UserAuthForm />
