@@ -88,15 +88,14 @@ const UserAuthForm = () => {
         code: data.code,
       })) as {
         onboardingRequired: boolean;
+        token: string;
       };
 
-      if (res?.onboardingRequired) {
-        toast.success("Email verified successfully");
-        router.push("/onboarding");
-      } else {
-        toast.success("Email verified successfully");
-        router.push("/dashboard");
-      }
+      res?.onboardingRequired ? router.push("/onboarding") : router.push("/dashboard");
+
+      // set token in session storage
+      sessionStorage.setItem("token", res.token);
+
       setSendingOTP(false);
     } catch (error: any) {
       console.error(error, "Error in email verification");

@@ -1,7 +1,7 @@
-import React from "react";
+import OnboardingStepper from "@/components/Onboarding/OnboardingStepper";
 
-const page = () => {
-  return <div>Onboarding</div>;
+const Page = () => {
+  return <OnboardingStepper />;
 };
 
-export default page;
+export default Page;

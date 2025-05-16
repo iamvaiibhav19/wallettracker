@@ -18,7 +18,7 @@ function verifyEmail(payload: { email: string; code: string }) {
       resolve(res.data);
     } catch (err: any) {
       console.error(err, "Error in verifyEmail");
-      toast.error(err.response?.data?.message || error.response?.data?.error || "An error occurred while verifying email");
+      toast.error(err.response?.data?.message || err?.response?.data?.error || "An error occurred while verifying email");
       reject(err);
     }
   });
