@@ -5,6 +5,7 @@ import userRoutes from "./auth/user.routes";
 import accountRoutes from "./account/account.routes";
 import transactionRoutes from "./transaction/transaction.routes";
 import categoryRoutes from "./category/category.routes";
+import budgetRoutes from "./budget/budget.routes";
 
 const router = Router();
 
@@ -22,5 +23,8 @@ router.use("/transactions", authenticate, transactionRoutes);
 
 // Category routes
 router.use("/categories", authenticate, categoryRoutes);
+
+// Budget routes
+router.use("/budget", authenticate, budgetRoutes);
 
 export default router;

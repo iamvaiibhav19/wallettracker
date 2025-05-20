@@ -24,6 +24,11 @@ import { TransactionType } from "@prisma/client";
  *               - type
  *               - accountId
  *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2023-06-01T10:00:00.000Z"
+ *                 description: The date/time of the transaction (optional)
  *               amount:
  *                 type: number
  *                 example: 500
@@ -35,9 +40,9 @@ import { TransactionType } from "@prisma/client";
  *                   - transfer
  *                   - lend
  *                 example: expense
- *               category:
+ *               categoryId:
  *                 type: string
- *                 example: Groceries
+ *                 example: "4f7c1b35-4c68-4e3d-8129-50884a1bfb02"
  *               description:
  *                 type: string
  *                 example: Monthly grocery shopping
@@ -80,9 +85,9 @@ import { TransactionType } from "@prisma/client";
  *                     type:
  *                       type: string
  *                       example: expense
- *                     category:
+ *                     categoryId:
  *                       type: string
- *                       example: Groceries
+ *                       example: "4f7c1b35-4c68-4e3d-8129-50884a1bfb02"
  *                     description:
  *                       type: string
  *                       example: Monthly grocery shopping
@@ -112,11 +117,13 @@ import { TransactionType } from "@prisma/client";
  */
 
 export const createTransaction = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
-  const { amount, type, categoryId, description, accountId, destinationAccountId, targetName, reminderDate } = req.body;
+  const { amount, type, categoryId, description, accountId, destinationAccountId, targetName, reminderDate, date } = req.body;
 
   try {
     let updatedAccountBalance: number | null = null;
     let updatedDestinationBalance: number | null = null;
+
+    const transactionDate = date ? new Date(date) : new Date();
 
     // Case 1: Income transaction
     if (type === TransactionType.income) {
@@ -180,7 +187,7 @@ export const createTransaction = async (req: AuthenticatedRequest, res: Response
         type,
         categoryId,
         description,
-        date: new Date(),
+        date: transactionDate,
         accountId,
         userId: req.user!.id,
         targetName,
@@ -655,7 +662,7 @@ export const deleteTransactions = async (req: AuthenticatedRequest, res: Respons
 
 /**
  * @swagger
- * /api/v2/transactions/delete-all:
+ * /api/v2/transactions/delete/all:
  *   delete:
  *     summary: Delete all transactions for the user and update the account balances
  *     security:
