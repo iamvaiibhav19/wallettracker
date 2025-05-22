@@ -9,7 +9,7 @@ function layout({ children }: { children: ReactNode }) {
       <Sidebar />
       <Header />
       <main id="page-content" className="relative flex flex-col md:flex-row max-w-full pt-16 h-screen overflow-hidden">
-        <div className="relative flex-grow mx-auto flex-1 flex flex-col w-full h-full max-w-10xl p-4 lg:p-8 overflow-auto">{children}</div>
+        <div className="relative flex-grow mx-auto flex-1 flex flex-col w-full h-full max-w-10xl p-4 lg:p-6 overflow-auto">{children}</div>
       </main>
     </div>
   );
