@@ -68,7 +68,7 @@ const OnboardingStepper = () => {
       });
       console.log("Onboarding response:", res);
       // Redirect to dashboard or another page after successful onboarding
-      router.push("/home");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Error during onboarding:", error);
     }

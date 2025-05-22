@@ -1,27 +1,35 @@
 "use client";
 
-import { Button, buttonVariants } from "@/components/ui/button";
 import useOutsideClick from "@/hooks/useOutsideClick";
-
 import { cn } from "@/lib/utils";
-import { XMarkIcon } from "@heroicons/react/24/outline";
-
+import useSidebarStore from "@/store/sidebarStore";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { NavigationItems } from "./NavigationItems";
 
-// export const mobileSidebarAtom = atom({
-//   key: "mobileSidebar",
-//   default: false,
-// });
+export const playlists = [
+  "Recently Added",
+  "Recently Played",
+  "Top Songs",
+  "Top Albums",
+  "Top Artists",
+  "Logic Discography",
+  "Bedtime Beats",
+  "Feeling Happy",
+  "I miss Y2K Pop",
+  "Runtober",
+  "Mellow Days",
+  "Eminem Essentials",
+];
 
 function Sidebar() {
-  const router = useRouter();
+  const { mobileSidebarOpen, toggleMobileSidebar } = useSidebarStore();
   const sidebarRef = useOutsideClick(() => {
-    setMobileSidebarOpen(false);
+    if (mobileSidebarOpen) {
+      toggleMobileSidebar();
+    }
   });
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
   return (
     <aside
       ref={sidebarRef}
@@ -32,12 +40,20 @@ function Sidebar() {
         mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
       <div className="flex flex-col h-screen">
-        <div className="flex h-16 w-full flex-none items-center px-4 justify-start lg:justify-start border-b border-slate-200">
-          <h3 className="text-lg font-bold tracking-wide text-gray-900 ">Sidebar</h3>
-          <div className="lg:hidden ml-auto">
-            <Button size="icon" variant="outline" className="shadow-none" onClick={() => setMobileSidebarOpen(false)}>
-              <XMarkIcon className="h-6 w-6 text-gray-900" />
-            </Button>
+        {/* Logo */}
+        <div className="flex h-16 w-full flex-none items-center px-4 justify-start border-b border-slate-200">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/assets/logo/logo.svg" alt="Logo" height={20} width={100} className="rounded-full w-[80%] mx-auto" />
+          </Link>
+        </div>
+
+        {/* Accordion Navigation */}
+        <NavigationItems className="flex-grow" playlists={playlists} />
+
+        {/* Footer or bottom content */}
+        <div className="mt-auto flex flex-col w-full">
+          <div className="flex justify-center gap-2 py-3 px-4 bg-brand-lighter h-10">
+            <p className="text-xs font-medium text-brand-darker">© 2025 Wallet Tracker</p>
           </div>
         </div>
       </div>
