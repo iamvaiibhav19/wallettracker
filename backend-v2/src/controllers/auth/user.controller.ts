@@ -121,6 +121,69 @@ export const onboardUser = async (req: AuthenticatedRequest, res: Response): Pro
 
 /**
  * @swagger
+ * /api/v2/user/me:
+ *   get:
+ *     summary: Get user information
+ *     description: Fetches basic information about the authenticated user.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: User ID
+ *                 username:
+ *                   type: string
+ *                   description: Username
+ *                 email:
+ *                   type: string
+ *                   description: Email address
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Date of account creation
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Date of last account update
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
+ */
+export const getUserInfo = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
+  const userId = req?.user?.id;
+  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+  try {
+    // Fetch user information from the database
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, createdAt: true, updatedAt: true },
+    });
+
+    if (!user) {
+      logger.error(`User not found for userId: ${userId}`);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (err: any) {
+    logger.error(`Failed to fetch user information for userId: ${userId} - ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * @swagger
  * /api/v2/user/net-worth:
  *   get:
  *     summary: Get user's net worth summary
