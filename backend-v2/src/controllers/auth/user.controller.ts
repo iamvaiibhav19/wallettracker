@@ -4,6 +4,7 @@ import { Currency } from "../../constants/Currency";
 import logger from "../../utils/logger";
 import { prisma } from "../../models/prismaClient";
 import { AuthenticatedRequest } from "middlewares/auth.middleware";
+import { calculateChange, getPreviousPeriodDates } from "../../utils";
 
 /**
  * @swagger
@@ -265,7 +266,7 @@ export const getNetWorthSummary = async (req: AuthenticatedRequest, res: Respons
       return ((current - previous) / previous) * 100;
     };
 
-    const { prevStart, prevEnd } = startDate && endDate ? getPreviousPeriod(startDate, endDate) : { prevStart: null, prevEnd: null };
+    const { prevStart, prevEnd } = startDate && endDate ? getPreviousPeriodDates(startDate, endDate) : { prevStart: null, prevEnd: null };
 
     // Net Worth (no date range)
     const accounts = await prisma.account.findMany({
@@ -311,5 +312,284 @@ export const getNetWorthSummary = async (req: AuthenticatedRequest, res: Respons
   } catch (err: any) {
     logger.error(`Net worth summary failed for userId: ${req.user?.id} - ${err.message}`);
     res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * @swagger
+ * /api/v2/user/dashboard/overview:
+ *   get:
+ *     summary: Get overview metrics for user dashboard
+ *     description: Returns key financial metrics with current and previous period data for dashboard summary cards.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         required: false
+ *         description: Start date of the current period (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         required: false
+ *         description: End date of the current period (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Dashboard overview metrics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalBalance:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: number
+ *                       example: 15000
+ *                     previous:
+ *                       type: number
+ *                       example: 14000
+ *                 netIncome:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: number
+ *                       example: 5000
+ *                     previous:
+ *                       type: number
+ *                       example: 4500
+ *                 totalExpenses:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: number
+ *                       example: 3000
+ *                     previous:
+ *                       type: number
+ *                       example: 3500
+ *                 totalBudgets:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: integer
+ *                       example: 5
+ *                     previous:
+ *                       type: integer
+ *                       example: 4
+ *                 budgetSpentPercent:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: number
+ *                       example: 72
+ *                     previous:
+ *                       type: number
+ *                       example: 65
+ *                 totalDebtsOutstanding:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: number
+ *                       example: 12000
+ *                     previous:
+ *                       type: number
+ *                       example: 13000
+ *                 monthlyEmiPaid:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: number
+ *                       example: 1500
+ *                     previous:
+ *                       type: number
+ *                       example: 1500
+ *                 recentTransactionsCount:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: integer
+ *                       example: 10
+ *                     previous:
+ *                       type: integer
+ *                       example: 12
+ *       400:
+ *         description: Missing or invalid query parameters
+ *       401:
+ *         description: Unauthorized (missing or invalid token)
+ *       500:
+ *         description: Internal server error
+ */
+export const getDashboardOverview = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
+  const userId = (req as any).user?.id;
+  let { startDate, endDate } = req.query;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // Default date range to "all time" if not provided
+  const start = startDate ? new Date(startDate as string) : new Date("1970-01-01");
+  const end = endDate ? new Date(endDate as string) : new Date();
+
+  // Previous period logic (defaulting to same duration before current start)
+  const durationMs = end.getTime() - start.getTime();
+  const prevEnd = new Date(start.getTime() - 1);
+  const prevStart = new Date(start.getTime() - durationMs);
+
+  try {
+    const accounts = await prisma.account.findMany({
+      where: { userId },
+      select: { balance: true },
+    });
+    const totalBalanceCurrent = accounts.reduce((acc, a) => acc + a.balance, 0);
+    const totalBalancePrevious = totalBalanceCurrent; // approx
+
+    const [txnsCurrent, txnsPrevious] = await Promise.all([
+      prisma.transaction.findMany({
+        where: { userId, date: { gte: start, lte: end } },
+        select: { amount: true, type: true },
+      }),
+      prisma.transaction.findMany({
+        where: { userId, date: { gte: prevStart, lte: prevEnd } },
+        select: { amount: true, type: true },
+      }),
+    ]);
+
+    const summarizeTxns = (txns: any[]) => {
+      let income = 0,
+        expense = 0;
+      txns.forEach(({ amount, type }) => {
+        if (type === "income") income += amount;
+        else if (type === "expense" || type === "lend") expense += amount;
+      });
+      return { income, expense };
+    };
+
+    const currSummary = summarizeTxns(txnsCurrent);
+    const prevSummary = summarizeTxns(txnsPrevious);
+
+    const activeBudgetsCurrent = await prisma.budget.count({
+      where: {
+        userId,
+        startDate: { lte: end },
+        endDate: { gte: start },
+      },
+    });
+    const activeBudgetsPrevious = await prisma.budget.count({
+      where: {
+        userId,
+        startDate: { lte: prevEnd },
+        endDate: { gte: prevStart },
+      },
+    });
+
+    async function calcBudgetSpentPercent(start: Date, end: Date) {
+      const budgets = await prisma.budget.findMany({
+        where: { userId, startDate: { lte: end }, endDate: { gte: start } },
+        select: { limit: true, categoryId: true },
+      });
+
+      const spentData = await Promise.all(
+        budgets.map(async (b) => {
+          const spent = await prisma.transaction.aggregate({
+            _sum: { amount: true },
+            where: {
+              userId,
+              categoryId: b.categoryId,
+              type: "expense",
+              date: { gte: start, lte: end },
+            },
+          });
+          return { spent: spent._sum.amount || 0, limit: b.limit };
+        })
+      );
+
+      const totalSpent = spentData.reduce((a, b) => a + b.spent, 0);
+      const totalLimit = spentData.reduce((a, b) => a + b.limit, 0);
+
+      return totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0;
+    }
+
+    const budgetSpentCurrent = await calcBudgetSpentPercent(start, end);
+    const budgetSpentPrevious = await calcBudgetSpentPercent(prevStart, prevEnd);
+
+    const debtsAgg = await prisma.debt.aggregate({
+      _sum: { outstanding: true },
+      where: { userId, isActive: true },
+    });
+
+    const emiPaidCurrentAgg = await prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: {
+        userId,
+        type: "expense",
+        debtId: { not: null },
+        date: { gte: start, lte: end },
+      },
+    });
+
+    const emiPaidPreviousAgg = await prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: {
+        userId,
+        type: "expense",
+        debtId: { not: null },
+        date: { gte: prevStart, lte: prevEnd },
+      },
+    });
+
+    return res.status(200).json({
+      totalBalance: {
+        current: totalBalanceCurrent,
+        previous: totalBalancePrevious,
+        changePercent: calculateChange(totalBalanceCurrent, totalBalancePrevious),
+      },
+      netIncome: {
+        current: currSummary.income,
+        previous: prevSummary.income,
+        changePercent: calculateChange(currSummary.income, prevSummary.income),
+      },
+      totalExpenses: {
+        current: currSummary.expense,
+        previous: prevSummary.expense,
+        changePercent: calculateChange(currSummary.expense, prevSummary.expense),
+      },
+      totalBudgets: {
+        current: activeBudgetsCurrent,
+        previous: activeBudgetsPrevious,
+        changePercent: calculateChange(activeBudgetsCurrent, activeBudgetsPrevious),
+      },
+      budgetSpentPercent: {
+        current: budgetSpentCurrent,
+        previous: budgetSpentPrevious,
+        changePercent: calculateChange(budgetSpentCurrent, budgetSpentPrevious),
+      },
+      totalDebtsOutstanding: {
+        current: debtsAgg._sum.outstanding || 0,
+        previous: debtsAgg._sum.outstanding || 0,
+        changePercent: 0,
+      },
+      monthlyEmiPaid: {
+        current: emiPaidCurrentAgg._sum.amount || 0,
+        previous: emiPaidPreviousAgg._sum.amount || 0,
+        changePercent: calculateChange(emiPaidCurrentAgg._sum.amount || 0, emiPaidPreviousAgg._sum.amount || 0),
+      },
+      recentTransactionsCount: {
+        current: txnsCurrent.length,
+        previous: txnsPrevious.length,
+        changePercent: calculateChange(txnsCurrent.length, txnsPrevious.length),
+      },
+    });
+  } catch (error: any) {
+    console.error("Dashboard overview error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

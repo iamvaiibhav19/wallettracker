@@ -59,22 +59,25 @@ model Transaction {
   amount               Float
   type                 TransactionType
   categoryId           String?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category             Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   description          String?
   date                 DateTime        @default(now())
   accountId            String
   userId               String
-  targetName           String? // for lend
-  reminderDate         DateTime? // for lend
-  destinationAccountId String? // self-transfer to another account
+  targetName           String?         
+  reminderDate         DateTime?       
+  destinationAccountId String?         
+  debtId               String?         
+
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
 
-  account            Account  @relation("AccountTransactionsFrom", fields: [accountId], references: [id])
-  destinationAccount Account? @relation("AccountTransactionsTo", fields: [destinationAccountId], references: [id]) // Reverse relation with unique name
-  user               User     @relation(fields: [userId], references: [id])
-}
+  account              Account         @relation("AccountTransactionsFrom", fields: [accountId], references: [id])
+  destinationAccount   Account?        @relation("AccountTransactionsTo", fields: [destinationAccountId], references: [id])
+  user                 User            @relation(fields: [userId], references: [id])
 
+  debt                 Debt?           @relation("DebtTransactions", fields: [debtId], references: [id])  // <-- relation name added here
+}
 
 model Account {
   id                   String        @id @default(uuid())
@@ -125,19 +128,20 @@ model Budget {
 }
 
 model Debt {
-  id            String     @id @default(uuid())
+  id            String         @id @default(uuid())
   userId        String
-  name          String     // e.g., "Home Loan", "Car EMI", "Credit Card"
-  principal     Float      // Original amount
-  outstanding   Float      // Remaining amount
-  monthlyEMI    Float      // Current EMI
-  interestRate  Float      // Annual interest rate
+  name          String
+  principal     Float
+  outstanding   Float
+  monthlyEMI    Float
+  interestRate  Float
   startDate     DateTime
   endDate       DateTime?
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  user     User     @relation(fields: [userId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
+
+  transactions  Transaction[]  @relation("DebtTransactions") 
 }
-
