@@ -21,7 +21,7 @@ const Notifications = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <BellAlertIcon className="text-gray-600 h-6 w-6" />
+        <BellAlertIcon className="text-gray-600 h-6 w-6 cursor-pointer hover:text-gray-800 transition-colors duration-200" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-72 mt-2" align="end">
         <DropdownMenuLabel>Notifications</DropdownMenuLabel>

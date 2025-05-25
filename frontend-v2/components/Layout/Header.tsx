@@ -6,14 +6,12 @@ import { MenuIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import Notifications from "./Notifications";
 import UserDropdown from "./UserDropdown";
+import useUserStore from "@/store/userStore";
 
 const Header = () => {
   const [greeting, setGreeting] = useState("");
   const { mobileSidebarOpen, toggleMobileSidebar } = useSidebarStore();
-
-  const [user, setUser] = useState({
-    username: "Alex",
-  });
+  const { user, setUser, clearUser } = useUserStore();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -48,7 +46,10 @@ const Header = () => {
           </div>
           <div className="flex items-center gap-6">
             <div className="greet">
-              <p className="text-lg font-semibold text-slate-900">Hello! {user.username}</p>
+              <p className="text-lg font-semibold text-slate-900 ">
+                Hello! <span className="">{user?.name || "Guest"}</span>
+              </p>
+              {/* Animate greeting text */}
               <motion.p
                 className="text-sm font-medium text-slate-500"
                 key={greeting} // Animate on greeting change

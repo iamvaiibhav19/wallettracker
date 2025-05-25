@@ -1,17 +1,20 @@
 "use client";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import useUserStore from "@/store/userStore";
 import { UserIcon } from "lucide-react";
-import { useRouter } from "next/navigation"; // If you're using Next.js router
+import { useRouter } from "next/navigation";
 
 const UserDropdown = () => {
+  const { clearUser } = useUserStore();
   const router = useRouter();
 
   const handleLogout = () => {
-    // Add your logout logic here, e.g., clear auth tokens
-    alert("Logging out...");
-    // Redirect to login page, for example:
+    // Clear user state
+    clearUser();
+    // Remove token from session storage
+    sessionStorage.removeItem("token");
+    // Redirect to login page
     router.push("/login");
   };
 
@@ -23,13 +26,13 @@ const UserDropdown = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <UserIcon className="text-gray-600 h-6 w-6" />
+        <UserIcon className="text-gray-600 h-6 w-6 cursor-pointer hover:text-gray-800 transition-colors duration-200" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-auto mt-2 " align="end">
         <DropdownMenuItem onClick={handleSettings} className="cursor-pointer ">
           Settings
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500">
           Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
