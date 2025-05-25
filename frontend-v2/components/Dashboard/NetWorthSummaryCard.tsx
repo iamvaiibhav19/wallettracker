@@ -31,7 +31,7 @@ const NetWorthSummaryCard = ({ income, expense, saving, incomeChange, expenseCha
   return (
     <div className="bg-white shadow-sm rounded-lg p-4 flex flex-col justify-between h-full">
       <div>
-        <h2 className="text-xl font-bold mb-4">Net Worth Summary</h2>
+        <h2 className="text-lg font-semibold mb-2">Net Worth Summary</h2>
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div>
             <p className="text-gray-600 text-sm">Income</p>

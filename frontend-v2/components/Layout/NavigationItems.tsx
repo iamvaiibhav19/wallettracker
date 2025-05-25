@@ -13,6 +13,8 @@ const ROUTES = {
   notifications: "/notifications",
   settings: "/settings",
   support: "/help-support",
+  accounts: "/accounts",
+  categories: "/categories",
 };
 
 // Reusable NavigationButton component
@@ -43,6 +45,8 @@ export function NavigationItems({ className }: { className?: string }) {
 
   const userItems = [
     { label: "Notifications", icon: BellAlertIcon, path: ROUTES.notifications },
+    { label: "Accounts", icon: Wallet2Icon, path: ROUTES.accounts },
+    { label: "Categories", icon: CircleDollarSign, path: ROUTES.categories },
     { label: "Settings", icon: Settings, path: ROUTES.settings },
     { label: "Help & Support", icon: HelpCircle, path: ROUTES.support },
   ];
