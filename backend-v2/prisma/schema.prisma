@@ -16,7 +16,6 @@ enum Currency {
   AUD
   CAD
   CNY
-  // Add more as needed
 }
 
 model User {
@@ -24,7 +23,7 @@ model User {
   name         String?
   email        String        @unique
   password     String?
-  currency     Currency? // 👈 use enum here
+  currency     Currency? 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   accounts     Account[]
@@ -33,6 +32,7 @@ model User {
   sessions     Session[]
   categories   Category[]
   budgets Budget[]
+  debts        Debt[]
 }
 
 enum TransactionType {
@@ -48,7 +48,6 @@ model Category {
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
   budgets Budget[]
@@ -75,6 +74,7 @@ model Transaction {
   destinationAccount Account? @relation("AccountTransactionsTo", fields: [destinationAccountId], references: [id]) // Reverse relation with unique name
   user               User     @relation(fields: [userId], references: [id])
 }
+
 
 model Account {
   id                   String        @id @default(uuid())
@@ -122,5 +122,22 @@ model Budget {
   category Category @relation(fields: [categoryId], references: [id])
 
   @@unique([userId, categoryId, startDate, endDate]) // Avoid duplicates
+}
+
+model Debt {
+  id            String     @id @default(uuid())
+  userId        String
+  name          String     // e.g., "Home Loan", "Car EMI", "Credit Card"
+  principal     Float      // Original amount
+  outstanding   Float      // Remaining amount
+  monthlyEMI    Float      // Current EMI
+  interestRate  Float      // Annual interest rate
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id])
 }
 

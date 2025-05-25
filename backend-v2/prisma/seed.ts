@@ -185,6 +185,49 @@ async function main() {
     skipDuplicates: true,
   });
 
+  // Add debts
+  await prisma.debt.createMany({
+    data: [
+      {
+        id: "debt-1",
+        userId: "sample-user-1",
+        name: "Home Loan",
+        principal: 5000000,
+        outstanding: 3500000,
+        monthlyEMI: 45000,
+        interestRate: 7.5,
+        startDate: new Date("2020-01-01"),
+        endDate: new Date("2040-01-01"),
+        isActive: true,
+      },
+      {
+        id: "debt-2",
+        userId: "sample-user-1",
+        name: "Car Loan",
+        principal: 800000,
+        outstanding: 200000,
+        monthlyEMI: 15000,
+        interestRate: 9.0,
+        startDate: new Date("2023-05-01"),
+        endDate: new Date("2028-05-01"),
+        isActive: true,
+      },
+      {
+        id: "debt-3",
+        userId: "sample-user-2",
+        name: "Credit Card",
+        principal: 0,
+        outstanding: 50000,
+        monthlyEMI: 5000,
+        interestRate: 18.0,
+        startDate: new Date("2024-02-15"),
+        endDate: null,
+        isActive: true,
+      },
+    ],
+    skipDuplicates: true,
+  });
+
   console.log("🌱 Seed completed.");
 }
 
