@@ -5,14 +5,13 @@ import { Button } from "../ui/button";
 
 const PageHeader = ({ title }: { title: string }) => {
   return (
-    <div className="flex items-center justify-between">
-      <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-      <div className="flex items-center">
-        <DatePickerWithRange className="w-[300px] cursor-pointer" />
-        {/* Download button */}
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <h1 className="text-2xl font-bold text-gray-800 flex-shrink-0">{title}</h1>
+      <div className="flex flex-wrap items-center gap-2 flex-grow min-w-[280px] justify-start md:justify-end">
+        <DatePickerWithRange className="w-[200px]" />
         <Button
           variant="outline"
-          className="ml-2 bg-brand-dark text-white hover:bg-brand-dark hover:text-white transition duration-200 ease-in-out cursor-pointer"
+          className="bg-brand-dark text-white hover:bg-brand-dark hover:text-white transition duration-200 ease-in-out cursor-pointer"
           onClick={() => {
             // Handle download action
             console.log("Download clicked");

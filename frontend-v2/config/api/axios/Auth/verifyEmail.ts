@@ -1,27 +1,22 @@
 import { toast } from "sonner";
 import axiosInstance from "../axios";
 
-function verifyEmail(payload: { email: string; code: string }) {
-  return new Promise(async (resolve, reject) => {
-    const { email, code } = payload;
-    if (!email || !code) {
-      toast.error("Email and code are required");
-      return reject(new Error("Email and code are required"));
-    }
-    try {
-      const res = await axiosInstance.post("/auth/verify-otp", {
-        email,
-        code,
-      });
+async function verifyEmail(payload: { email: string; code: string }) {
+  const { email, code } = payload;
+  if (!email || !code) {
+    toast.error("Email and code are required");
+    throw new Error("Email and code are required");
+  }
 
-      toast.success("Email verified successfully");
-      resolve(res.data);
-    } catch (err: any) {
-      console.error(err, "Error in verifyEmail");
-      toast.error(err.response?.data?.message || err?.response?.data?.error || "An error occurred while verifying email");
-      reject(err);
-    }
-  });
+  try {
+    const response = await axiosInstance.post("/auth/verify-otp", { email, code });
+    toast.success("Email verified successfully");
+    return response.data;
+  } catch (err: any) {
+    console.error("Error in verifyEmail", err);
+    toast.error(err.response?.data?.message || err.response?.data?.error || "An error occurred while verifying email");
+    throw err;
+  }
 }
 
 export default verifyEmail;

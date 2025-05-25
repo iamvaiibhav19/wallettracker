@@ -1,41 +1,42 @@
 import { toast } from "sonner";
 import axiosInstance from "../axios";
 
-function onboardUser(payload: { currency: string; bankName: string; type: string; balance: number }) {
-  return new Promise(async (resolve, reject) => {
-    const { currency, bankName, type, balance } = payload;
+interface OnboardPayload {
+  currency: string;
+  bankName: string;
+  type: string;
+  balance: number;
+}
 
-    if (!currency || !bankName || !type || !balance) {
-      toast.error("All fields are required");
-      return reject(new Error("All fields are required"));
-    }
+async function onboardUser(payload: OnboardPayload) {
+  const { currency, bankName, type, balance } = payload;
 
-    const token = sessionStorage.getItem("token");
+  if (!currency || !bankName || !type || balance === undefined || balance === null) {
+    toast.error("All fields are required");
+    throw new Error("All fields are required");
+  }
 
-    try {
-      const res = await axiosInstance.post(
-        "/user/onboard",
-        {
-          currency,
-          bankName,
-          type,
-          balance: Number(balance),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  try {
+    const res = await axiosInstance.post(
+      "/user/onboard",
+      {
+        currency,
+        bankName,
+        type,
+        balance: Number(balance),
+      },
+      {
+        withAuth: true,
+      }
+    );
 
-      toast.success("Onboarding successful");
-      resolve(res.data);
-    } catch (err: any) {
-      console.error(err, "Error in onboardUser");
-      toast.error(err.response?.data?.message || err.response?.data?.error || "An error occurred during onboarding");
-      reject(err);
-    }
-  });
+    toast.success("Onboarding successful");
+    return res.data;
+  } catch (err: any) {
+    console.error("Error in onboardUser", err);
+    toast.error(err.response?.data?.message || err.response?.data?.error || "An error occurred during onboarding");
+    throw err;
+  }
 }
 
 export default onboardUser;
