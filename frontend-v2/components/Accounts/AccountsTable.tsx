@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { useTransactions } from "@/hooks/useTransactions";
 
-import { DataTable, FilterConfig } from "../Common/DataTable";
+import { DataTable } from "../Common/DataTable";
 
 import { saveAs } from "file-saver";
-import { exportTransactions } from "@/config/api/axios/Transactions/getRecentTransactionsData";
 import { toast } from "sonner";
 import { LoadingOverlay } from "../Common/LoadingOverlay";
-import { useCategories } from "@/hooks/useCategories";
 
-import { exportCategories } from "@/config/api/axios/Categories/getCategories";
-import { categoriesColumns } from "./CategoriesColumns";
+import { useAccounts } from "@/hooks/useAccounts";
+import { accountsColumns } from "./AccountColumns";
+import { exportAccounts } from "@/config/api/axios/Accounts/getAccounts";
 
-export default function CategoriesTable({ params: initialParams }: { params: any }) {
+export default function AccountsTable({ params: initialParams }: { params: any }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -24,14 +22,14 @@ export default function CategoriesTable({ params: initialParams }: { params: any
     page,
     limit,
   };
-  const { data, isLoading } = useCategories(params);
+  const { data, isLoading } = useAccounts(params);
 
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      const blob = await exportCategories({ ...initialParams, search, isExport: true });
+      const blob = await exportAccounts({ ...initialParams, search, isExport: true });
       const unixTimestamp = new Date().getTime();
-      const filename = `Categories_${unixTimestamp}.xlsx`;
+      const filename = `Accounts_${unixTimestamp}.xlsx`;
       saveAs(blob, filename);
       toast.success("Data exported successfully");
     } catch (err) {
@@ -46,8 +44,8 @@ export default function CategoriesTable({ params: initialParams }: { params: any
     <>
       <LoadingOverlay isVisible={isExporting} />
       <DataTable
-        columns={categoriesColumns}
-        data={data?.categories ?? []}
+        columns={accountsColumns}
+        data={data?.accounts ?? []}
         isLoading={isLoading || isExporting}
         searchValue={search}
         onSearchChange={(value) => {

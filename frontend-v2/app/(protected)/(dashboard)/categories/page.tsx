@@ -27,7 +27,6 @@ const Page = () => {
     <div className="flex flex-col h-screen">
       <PageHeader title="Categories" showDownload={false} showDatePicker={false} />
 
-      {/* Pass params to your table */}
       <CategoriesTable params={params} />
     </div>
   );

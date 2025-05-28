@@ -71,7 +71,8 @@ export default function TransactionsTable({ params: initialParams }: { params: a
     try {
       setIsExporting(true);
       const blob = await exportTransactions({ ...initialParams, search, filters: parsedFilters, isExport: true });
-      const filename = `Transactions_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const unixTimestamp = new Date().getTime();
+      const filename = `Transactions_${unixTimestamp}.xlsx`;
       saveAs(blob, filename);
       toast.success("Data exported successfully");
     } catch (err) {
