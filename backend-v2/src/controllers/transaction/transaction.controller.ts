@@ -3,6 +3,8 @@ import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
 import { prisma } from "../../models/prismaClient";
 import logger from "../../utils/logger";
 import { TransactionType } from "@prisma/client";
+import { transactionExportColumns } from "../../utils/export/columns/transactionColumns";
+import { exportToExcel } from "../../utils/export/exportToExcel";
 
 /**
  * @swagger
@@ -343,7 +345,7 @@ export const getTransactions = async (req: AuthenticatedRequest, res: Response):
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
-    const { startDate, endDate, category, label, minAmount, maxAmount } = req.query;
+    const { startDate, endDate, category, minAmount, maxAmount, search, isExport } = req.query;
 
     // Build Prisma filters dynamically
     const filters: any = { userId };
@@ -358,17 +360,37 @@ export const getTransactions = async (req: AuthenticatedRequest, res: Response):
       filters.category = category;
     }
 
-    if (label) {
-      filters.description = {
-        contains: label as string,
-        mode: "insensitive",
-      };
-    }
-
     if (minAmount || maxAmount) {
       filters.amount = {};
       if (minAmount) filters.amount.gte = Number(minAmount);
       if (maxAmount) filters.amount.lte = Number(maxAmount);
+    }
+
+    // Add search across multiple fields
+    if (search) {
+      const searchStr = search as string;
+      filters.OR = [
+        { description: { contains: searchStr, mode: "insensitive" } },
+        { category: { name: { contains: searchStr, mode: "insensitive" } } },
+        { amount: isNaN(Number(searchStr)) ? undefined : Number(searchStr) },
+        { targetName: { contains: searchStr, mode: "insensitive" } },
+      ].filter(Boolean);
+    }
+
+    if (isExport === "true") {
+      // setTimeout for simulating delay in export
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      const transactions = await prisma.transaction.findMany({
+        where: filters,
+        orderBy: { date: "desc" },
+        include: { category: true },
+      });
+
+      const buffer = await exportToExcel(transactions, transactionExportColumns, "Transactions");
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
+      return res.send(buffer);
     }
 
     // Count total filtered transactions for pagination info
@@ -381,7 +403,7 @@ export const getTransactions = async (req: AuthenticatedRequest, res: Response):
       skip,
       take: limit,
       include: {
-        category: true, // ✅ full category details
+        category: true,
       },
     });
 
