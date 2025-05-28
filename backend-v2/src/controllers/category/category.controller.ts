@@ -190,14 +190,66 @@ export const deleteCategory = async (req: AuthenticatedRequest, res: Response): 
  * @swagger
  * /api/v2/categories:
  *   get:
- *     summary: Get all categories for the user
+ *     summary: Get all categories for the user with optional pagination and date filters
  *     tags:
  *       - [Categories]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of categories per page (max 100)
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter categories created from this date (inclusive)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter categories created up to this date (inclusive)
  *     responses:
  *       200:
- *         description: List of categories
+ *         description: List of categories with pagination info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 categories:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Category'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       description: Total number of categories
+ *                     page:
+ *                       type: integer
+ *                       description: Current page number
+ *                     limit:
+ *                       type: integer
+ *                       description: Number of categories per page
+ *                     totalPages:
+ *                       type: integer
+ *                       description: Total number of pages
  *       401:
  *         description: Unauthorized
  *       500:
@@ -205,14 +257,50 @@ export const deleteCategory = async (req: AuthenticatedRequest, res: Response): 
  */
 export const getCategories = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
+    const userId = req.user!.id;
+
+    // Destructure query params
+    const { page: pageRaw, limit: limitRaw, startDate, endDate } = req.query as any;
+
+    // Parse pagination
+    const page = Math.max(1, parseInt(pageRaw as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(limitRaw as string) || 20));
+    const skip = (page - 1) * limit;
+
+    // Build Prisma where clause
+    const filters: any = { userId };
+
+    // Optional date filters (assuming categories have createdAt field)
+    if (startDate || endDate) {
+      filters.createdAt = {};
+      if (startDate) filters.createdAt.gte = new Date(startDate);
+      if (endDate) filters.createdAt.lte = new Date(endDate);
+    }
+
+    // Count total filtered categories
+    const total = await prisma.category.count({ where: filters });
+
+    // Fetch filtered and paginated categories
     const categories = await prisma.category.findMany({
-      where: { userId: req.user!.id },
+      where: filters,
       orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
     });
 
-    res.status(200).json({ categories });
+    logger.info(`[GetCategories] User: ${req.user!.email} | Page: ${page} | Limit: ${limit} | Returned: ${categories.length}`);
+
+    res.status(200).json({
+      categories,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (err: any) {
-    logger.error(`Error fetching categories: ${err.message} | User: ${req.user!.email}`);
+    logger.error(`[GetCategories] Error fetching categories: ${err.message} | User: ${req.user!.email}`);
     res.status(500).json({ message: "Internal server error" });
   }
 };

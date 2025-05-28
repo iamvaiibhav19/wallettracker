@@ -230,7 +230,7 @@ export const createTransaction = async (req: AuthenticatedRequest, res: Response
  * @swagger
  * /api/v2/transactions:
  *   get:
- *     summary: Get transactions for the logged-in user with filters and pagination
+ *     summary: Get transactions for the logged-in user with filters, pagination, and export option
  *     tags:
  *       - Transactions
  *     security:
@@ -264,30 +264,38 @@ export const createTransaction = async (req: AuthenticatedRequest, res: Response
  *           format: date-time
  *         description: Filter transactions up to this date (inclusive) (optional)
  *       - in: query
- *         name: category
+ *         name: search
  *         schema:
  *           type: string
- *         description: Filter by transaction category (optional)
+ *         description: Search text applied to description, category name, target name, or exact amount (optional)
  *       - in: query
- *         name: label
+ *         name: isExport
  *         schema:
- *           type: string
- *         description: Filter by transaction description containing this substring (case-insensitive) (optional)
+ *           type: boolean
+ *           default: false
+ *         description: If true, exports all matching transactions as an Excel file (optional)
  *       - in: query
- *         name: minAmount
+ *         name: filters
  *         schema:
- *           type: number
- *           format: float
- *         description: Filter by minimum transaction amount (optional)
- *       - in: query
- *         name: maxAmount
- *         schema:
- *           type: number
- *           format: float
- *         description: Filter by maximum transaction amount (optional)
+ *           type: object
+ *           properties:
+ *             category:
+ *               type: string
+ *               description: Filter by transaction category (optional)
+ *             minAmount:
+ *               type: number
+ *               format: float
+ *               description: Filter by minimum transaction amount (optional)
+ *             maxAmount:
+ *               type: number
+ *               format: float
+ *               description: Filter by maximum transaction amount (optional)
+ *         style: deepObject
+ *         explode: true
+ *         description: Additional filters as an object (optional)
  *     responses:
  *       200:
- *         description: List of transactions with pagination info
+ *         description: List of transactions with pagination info or Excel file when exporting
  *         content:
  *           application/json:
  *             schema:
@@ -313,8 +321,11 @@ export const createTransaction = async (req: AuthenticatedRequest, res: Response
  *                         format: float
  *                         example: 45.67
  *                       category:
- *                         type: string
- *                         example: "Food"
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                             example: "Food"
  *                 pagination:
  *                   type: object
  *                   properties:
@@ -335,29 +346,50 @@ export const createTransaction = async (req: AuthenticatedRequest, res: Response
  *       500:
  *         description: Internal server error
  */
-
 export const getTransactions = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const userId = req.user!.id;
 
-    // Parse and sanitize query params
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    // Destructure query params
+    const { page: pageRaw, limit: limitRaw, startDate, endDate, search, isExport, minAmount, maxAmount, category } = req.query as any;
+
+    console.log(req.query, "query params");
+
+    // Parse pagination
+    const page = Math.max(1, parseInt(pageRaw as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(limitRaw as string) || 20));
     const skip = (page - 1) * limit;
 
-    const { startDate, endDate, category, minAmount, maxAmount, search, isExport } = req.query;
-
-    // Build Prisma filters dynamically
+    // Build Prisma where clause
     const filters: any = { userId };
 
+    // Optional date filters
     if (startDate || endDate) {
       filters.date = {};
-      if (startDate) filters.date.gte = new Date(startDate as string);
-      if (endDate) filters.date.lte = new Date(endDate as string);
+      if (startDate) filters.date.gte = new Date(startDate);
+      if (endDate) filters.date.lte = new Date(endDate);
     }
 
+    // Filters from payload - category as multiple IDs
+    let categoryIds: number[] | undefined;
+
     if (category) {
-      filters.category = category;
+      console.log(category, "category filter");
+      if (Array.isArray(category)) {
+        console.log("Category is an array");
+        categoryIds = category.map((id) => Number(id)).filter(Boolean);
+      } else if (typeof category === "string") {
+        console.log("Category is a string");
+        categoryIds = category.split(",") as any;
+      } else {
+        console.log(typeof category, "category type is not string or array");
+      }
+    }
+
+    console.log(categoryIds, "categoryIds");
+
+    if (categoryIds && categoryIds.length > 0) {
+      filters.categoryId = { in: categoryIds };
     }
 
     if (minAmount || maxAmount) {
@@ -366,20 +398,23 @@ export const getTransactions = async (req: AuthenticatedRequest, res: Response):
       if (maxAmount) filters.amount.lte = Number(maxAmount);
     }
 
-    // Add search across multiple fields
+    // Search filter (across multiple fields)
     if (search) {
       const searchStr = search as string;
       filters.OR = [
         { description: { contains: searchStr, mode: "insensitive" } },
         { category: { name: { contains: searchStr, mode: "insensitive" } } },
-        { amount: isNaN(Number(searchStr)) ? undefined : Number(searchStr) },
+        !isNaN(Number(searchStr)) ? { amount: Number(searchStr) } : undefined,
         { targetName: { contains: searchStr, mode: "insensitive" } },
       ].filter(Boolean);
     }
 
+    console.log(filters, "filters");
+
+    // Export as Excel
     if (isExport === "true") {
-      // setTimeout for simulating delay in export
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // simulate delay
+
       const transactions = await prisma.transaction.findMany({
         where: filters,
         orderBy: { date: "desc" },
@@ -393,10 +428,9 @@ export const getTransactions = async (req: AuthenticatedRequest, res: Response):
       return res.send(buffer);
     }
 
-    // Count total filtered transactions for pagination info
+    // Pagination & fetch
     const total = await prisma.transaction.count({ where: filters });
 
-    // Fetch paginated data
     const transactions = await prisma.transaction.findMany({
       where: filters,
       orderBy: { date: "desc" },
