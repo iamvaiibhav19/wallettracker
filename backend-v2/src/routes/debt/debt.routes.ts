@@ -1,7 +1,7 @@
-import { createDebt, deleteDebt, getDebts, updateDebt } from "controllers/debt/debt.controller";
+import { createDebt, deleteDebt, getDebts, updateDebt } from "../../controllers/debt/debt.controller";
 import { Router } from "express";
-import { validateInput } from "middlewares/validateInput";
-import { createDebtSchema, updateDebtSchema } from "schemas/debt.schema";
+import { validateInput } from "../../middlewares/validateInput";
+import { createDebtSchema, updateDebtSchema } from "../../schemas/debt.schema";
 
 const router = Router();
 

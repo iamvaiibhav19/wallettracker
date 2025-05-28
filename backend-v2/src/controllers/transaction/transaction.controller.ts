@@ -228,28 +228,174 @@ export const createTransaction = async (req: AuthenticatedRequest, res: Response
  * @swagger
  * /api/v2/transactions:
  *   get:
- *     summary: Get all transactions for the logged-in user
- *     tags: [Transactions]
+ *     summary: Get transactions for the logged-in user with filters and pagination
+ *     tags:
+ *       - Transactions
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination (optional)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         description: Number of transactions per page (optional)
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter transactions from this date (inclusive) (optional)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter transactions up to this date (inclusive) (optional)
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by transaction category (optional)
+ *       - in: query
+ *         name: label
+ *         schema:
+ *           type: string
+ *         description: Filter by transaction description containing this substring (case-insensitive) (optional)
+ *       - in: query
+ *         name: minAmount
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Filter by minimum transaction amount (optional)
+ *       - in: query
+ *         name: maxAmount
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Filter by maximum transaction amount (optional)
  *     responses:
  *       200:
- *         description: List of user transactions
+ *         description: List of transactions with pagination info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 transactions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "txn_123abc"
+ *                       date:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2023-05-20T14:48:00.000Z"
+ *                       description:
+ *                         type: string
+ *                         example: "Grocery Shopping"
+ *                       amount:
+ *                         type: number
+ *                         format: float
+ *                         example: 45.67
+ *                       category:
+ *                         type: string
+ *                         example: "Food"
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 42
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 20
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 3
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized - invalid or missing authentication token
  *       500:
  *         description: Internal server error
  */
+
 export const getTransactions = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
+    const userId = req.user!.id;
+
+    // Parse and sanitize query params
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const { startDate, endDate, category, label, minAmount, maxAmount } = req.query;
+
+    // Build Prisma filters dynamically
+    const filters: any = { userId };
+
+    if (startDate || endDate) {
+      filters.date = {};
+      if (startDate) filters.date.gte = new Date(startDate as string);
+      if (endDate) filters.date.lte = new Date(endDate as string);
+    }
+
+    if (category) {
+      filters.category = category;
+    }
+
+    if (label) {
+      filters.description = {
+        contains: label as string,
+        mode: "insensitive",
+      };
+    }
+
+    if (minAmount || maxAmount) {
+      filters.amount = {};
+      if (minAmount) filters.amount.gte = Number(minAmount);
+      if (maxAmount) filters.amount.lte = Number(maxAmount);
+    }
+
+    // Count total filtered transactions for pagination info
+    const total = await prisma.transaction.count({ where: filters });
+
+    // Fetch paginated data
     const transactions = await prisma.transaction.findMany({
-      where: { userId: req.user!.id },
+      where: filters,
       orderBy: { date: "desc" },
+      skip,
+      take: limit,
+      include: {
+        category: true, // ✅ full category details
+      },
     });
 
-    logger.info(`[GetTransactions] Fetched ${transactions.length} transactions | User: ${req.user!.email}`);
+    logger.info(`[GetTransactions] User: ${req.user!.email} | Page: ${page} | Limit: ${limit} | Returned: ${transactions.length}`);
 
-    res.status(200).json({ transactions });
+    res.status(200).json({
+      transactions,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (err: any) {
     logger.error(`[GetTransactions] Error: ${err.message} | User: ${req.user?.email}`);
     res.status(500).json({ message: "Internal server error" });
@@ -744,5 +890,103 @@ export const deleteAllTransactions = async (req: AuthenticatedRequest, res: Resp
   } catch (err: any) {
     logger.error(`[DeleteAllTransactions] Error: ${err.message} | User: ${req.user!.email}`);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * @swagger
+ * /api/v2/transactions/heatmap:
+ *   get:
+ *     summary: Get daily transaction counts for heatmap
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         required: false
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         required: false
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [income, expense, transfer, lend]
+ *         required: false
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: accountId
+ *         schema:
+ *           type: string
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: Daily transaction counts for heatmap
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                       count:
+ *                         type: number
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
+ */
+export const getTransactionHeatmap = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
+  try {
+    const { startDate, endDate, type, categoryId, accountId } = req.query;
+
+    const where: any = {
+      userId: req.user!.id,
+    };
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate as string);
+      if (endDate) where.date.lte = new Date(endDate as string);
+    }
+
+    if (type) where.type = type;
+    if (categoryId) where.categoryId = categoryId;
+    if (accountId) where.accountId = accountId;
+
+    const heatmapData = await prisma.transaction.groupBy({
+      by: ["date"],
+      _count: { id: true },
+      where,
+      orderBy: { date: "asc" },
+    });
+
+    const result = heatmapData.map(({ date, _count }) => ({
+      date: date.toISOString().split("T")[0],
+      count: _count.id,
+    }));
+
+    logger.info(`[Heatmap] Returned ${result.length} entries for user ${req.user!.email}`);
+    return res.json({ data: result });
+  } catch (err: any) {
+    logger.error(`[Heatmap] Error: ${err.message} | User: ${req.user?.email}`);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -14,4 +14,14 @@ function getPreviousPeriodDates(startDate: string | Date, endDate: string | Date
   return { prevStart, prevEnd };
 }
 
-export { calculateChange, getPreviousPeriodDates };
+function getDatesBetween(start: Date, end: Date): string[] {
+  const dates = [];
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(current.toISOString().split("T")[0]);
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+}
+
+export { calculateChange, getPreviousPeriodDates, getDatesBetween };

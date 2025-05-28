@@ -6,6 +6,7 @@ import accountRoutes from "./account/account.routes";
 import transactionRoutes from "./transaction/transaction.routes";
 import categoryRoutes from "./category/category.routes";
 import budgetRoutes from "./budget/budget.routes";
+import debtRoutes from "./debt/debt.routes";
 
 const router = Router();
 
@@ -26,5 +27,8 @@ router.use("/categories", authenticate, categoryRoutes);
 
 // Budget routes
 router.use("/budget", authenticate, budgetRoutes);
+
+// Debt routes
+router.use("/debt", authenticate, debtRoutes);
 
 export default router;
