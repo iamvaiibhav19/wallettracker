@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDateRangeStore } from "@/store/customDateRangeStore";
+import { formatDateRange } from "@/utils";
 
 const quickRanges: { label: string; range: DateRange }[] = [
   {
@@ -65,15 +66,6 @@ const quickRanges: { label: string; range: DateRange }[] = [
     },
   },
 ];
-
-// Helper to format the date range nicely
-function formatDateRange(range: DateRange) {
-  if (!range.from || !range.to) return "No date selected";
-  const from = format(range.from, "MMM d, yyyy");
-  const to = format(range.to, "MMM d, yyyy");
-  if (from === to) return from;
-  return `${from} - ${to}`;
-}
 
 export function DatePickerWithRange({ className }: React.HTMLAttributes<HTMLDivElement>) {
   const { range, setRange, selectedLabel, setSelectedLabel } = useDateRangeStore();
