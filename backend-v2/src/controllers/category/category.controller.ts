@@ -1,7 +1,9 @@
 import { Response } from "express";
+import { exportToExcel } from "../../utils/export/exportToExcel";
 import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
-import logger from "../../utils/logger";
 import { prisma } from "../../models/prismaClient";
+import { categoryExportColumns } from "../../utils/export/columns/categoryExportColumns";
+import logger from "../../utils/logger";
 
 /**
  * @swagger
@@ -190,7 +192,7 @@ export const deleteCategory = async (req: AuthenticatedRequest, res: Response): 
  * @swagger
  * /api/v2/categories:
  *   get:
- *     summary: Get all categories for the user with optional pagination and date filters
+ *     summary: Get all categories for the user with optional pagination, date, and search filters
  *     tags:
  *       - [Categories]
  *     security:
@@ -223,6 +225,11 @@ export const deleteCategory = async (req: AuthenticatedRequest, res: Response): 
  *           type: string
  *           format: date-time
  *         description: Filter categories created up to this date (inclusive)
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search keyword to filter category names
  *     responses:
  *       200:
  *         description: List of categories with pagination info
@@ -255,12 +262,13 @@ export const deleteCategory = async (req: AuthenticatedRequest, res: Response): 
  *       500:
  *         description: Internal server error
  */
+
 export const getCategories = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const userId = req.user!.id;
 
     // Destructure query params
-    const { page: pageRaw, limit: limitRaw, startDate, endDate } = req.query as any;
+    const { page: pageRaw, limit: limitRaw, startDate, endDate, search, isExport = false } = req.query as any;
 
     // Parse pagination
     const page = Math.max(1, parseInt(pageRaw as string) || 1);
@@ -268,13 +276,40 @@ export const getCategories = async (req: AuthenticatedRequest, res: Response): P
     const skip = (page - 1) * limit;
 
     // Build Prisma where clause
-    const filters: any = { userId };
+    const filters: any = {
+      userId,
+    };
 
-    // Optional date filters (assuming categories have createdAt field)
+    // Optional date filters
     if (startDate || endDate) {
       filters.createdAt = {};
       if (startDate) filters.createdAt.gte = new Date(startDate);
       if (endDate) filters.createdAt.lte = new Date(endDate);
+    }
+
+    // Optional search filter
+    if (search && typeof search === "string") {
+      filters.name = {
+        contains: search,
+        mode: "insensitive", // Case-insensitive search
+      };
+    }
+
+    // Export as Excel
+    if (isExport === "true") {
+      // simulate 1 second delay for export
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const categories = await prisma.category.findMany({
+        where: filters,
+        orderBy: { createdAt: "desc" },
+      });
+
+      const buffer = await exportToExcel(categories, categoryExportColumns, "categories");
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
+      return res.send(buffer);
     }
 
     // Count total filtered categories

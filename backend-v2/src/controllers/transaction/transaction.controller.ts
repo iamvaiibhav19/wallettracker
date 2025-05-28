@@ -413,8 +413,6 @@ export const getTransactions = async (req: AuthenticatedRequest, res: Response):
 
     // Export as Excel
     if (isExport === "true") {
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // simulate delay
-
       const transactions = await prisma.transaction.findMany({
         where: filters,
         orderBy: { date: "desc" },

@@ -70,9 +70,11 @@ export function DataTable<TData, TValue>({
 
   // Sync internalFilters with filterValues prop when it changes from API or parent
   useEffect(() => {
-    setInternalFilters(filterValues);
+    const hasChanged = JSON.stringify(internalFilters) !== JSON.stringify(filterValues);
+    if (hasChanged) {
+      setInternalFilters(filterValues);
+    }
   }, [filterValues]);
-
   const table = useReactTable({
     data,
     columns,

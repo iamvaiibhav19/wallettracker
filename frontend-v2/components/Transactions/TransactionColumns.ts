@@ -1,22 +1,5 @@
+import { formatDate, formatDateTime } from "@/utils";
 import { ColumnDef } from "@tanstack/react-table";
-
-const formatDateTime = (value: string | Date) => {
-  return new Date(value).toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const formatDate = (value: string | Date) => {
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
 
 export const transactionsColumns: ColumnDef<any>[] = [
   {
