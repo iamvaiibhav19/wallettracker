@@ -1,12 +1,36 @@
-import React from "react";
+"use client";
 
-const page = () => {
+import React, { useEffect } from "react";
+import PageHeader from "@/components/Common/PageHeader";
+import { useDateRangeStore } from "@/store/customDateRangeStore";
+import { endOfMonth, startOfMonth } from "date-fns";
+import TransactionDataTable from "@/components/Transactions/TransactionsTable";
+
+const Page = () => {
+  const { range, setRange, setSelectedLabel } = useDateRangeStore();
+
+  useEffect(() => {
+    const defaultRange = {
+      from: startOfMonth(new Date()),
+      to: endOfMonth(new Date()),
+    };
+    setRange(defaultRange);
+    setSelectedLabel("This Month");
+  }, [setRange, setSelectedLabel]);
+
+  const params = {
+    startDate: range.from?.toISOString(),
+    endDate: range.to?.toISOString(),
+  };
+
   return (
-    <div>
-      Welcome to the Transactions page! This is where you can view and manage your financial transactions effectively. Here, you can track your
-      spending, categorize your transactions, and analyze your financial habits to make informed decisions. Stay tuned for more features and updates!
+    <div className="flex flex-col h-screen">
+      <PageHeader title="Transactions" showDownload={false} showDatePicker={false} />
+
+      {/* Pass params to your table */}
+      <TransactionDataTable params={params} />
     </div>
   );
 };
 
-export default page;
+export default Page;

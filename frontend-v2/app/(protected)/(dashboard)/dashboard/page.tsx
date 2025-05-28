@@ -5,8 +5,9 @@ import getOverviewMetrics from "@/config/api/axios/Dashboard/getOverviewMetrics"
 import OverviewCard from "@/components/Common/OverviewCard";
 import { useDateRangeStore } from "@/store/customDateRangeStore";
 import { startOfMonth, endOfMonth } from "date-fns";
-import getAllTransactions from "@/config/api/axios/Transactions/getRecentTransactionsData";
+
 import RecentTransactionsCard from "@/components/Dashboard/RecentTransactions";
+import { getAllTransactions } from "@/config/api/axios/Transactions/getRecentTransactionsData";
 
 const DashboardPage = () => {
   const { range, setRange, setSelectedLabel } = useDateRangeStore();

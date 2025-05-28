@@ -1,34 +1,6 @@
 import { toast } from "sonner";
 import axiosInstance from "../axios";
-
-interface TransactionsParams {
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  limit?: number;
-  category?: string;
-  label?: string;
-  minAmount?: number;
-  maxAmount?: number;
-}
-
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  category?: string;
-}
-
-interface TransactionsResponse {
-  transactions: Transaction[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+import { TransactionsParams, TransactionsResponse } from "@/types/transactions";
 
 async function getAllTransactions(params: TransactionsParams = {}): Promise<TransactionsResponse> {
   try {
@@ -45,4 +17,18 @@ async function getAllTransactions(params: TransactionsParams = {}): Promise<Tran
   }
 }
 
-export default getAllTransactions;
+async function exportTransactions(params: TransactionsParams = {}): Promise<Blob> {
+  try {
+    const response = await axiosInstance.get("/transactions", {
+      withAuth: true,
+      params,
+      responseType: "blob",
+    });
+    return response.data;
+  } catch (err: any) {
+    console.error("Error exporting transactions", err);
+    throw err;
+  }
+}
+
+export { getAllTransactions, exportTransactions };
