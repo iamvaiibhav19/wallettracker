@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useDateRangeStore } from "@/store/customDateRangeStore";
 import { endOfMonth, startOfMonth } from "date-fns";
 import TransactionDataTable from "@/components/Transactions/TransactionsTable";
+import { AddTransactionModal } from "@/components/Transactions/AddTransactionModal";
 
 const Page = () => {
   const { range, setRange, setSelectedLabel } = useDateRangeStore();
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
+  const [refetch, setRefetch] = useState(false);
 
   useEffect(() => {
     const defaultRange = {
@@ -25,10 +28,31 @@ const Page = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <PageHeader title="Transactions" showDownload={false} showDatePicker={false} />
+      <PageHeader
+        title="Transactions"
+        showDownload={false}
+        showDatePicker={false}
+        AddButton={
+          <AddTransactionModal
+            editTransactionId={editingTransactionId ?? undefined}
+            onCloseEdit={() => setEditingTransactionId(null)}
+            onSuccess={() => {
+              setRefetch(!refetch);
+            }}
+          />
+        }
+      />
 
-      {/* Pass params to your table */}
-      <TransactionDataTable params={params} />
+      <TransactionDataTable
+        params={params}
+        refetch={refetch}
+        onEdit={(id) => {
+          setEditingTransactionId(id);
+        }}
+        onDelete={() => {
+          setRefetch(!refetch);
+        }}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { transactionsColumns } from "./TransactionColumns";
 import { DataTable, FilterConfig } from "../Common/DataTable";
@@ -9,7 +9,14 @@ import { toast } from "sonner";
 import { LoadingOverlay } from "../Common/LoadingOverlay";
 import { useCategories } from "@/hooks/useCategories";
 
-export default function TransactionsTable({ params: initialParams }: { params: any }) {
+interface TransactionsTableProps {
+  params: any;
+  refetch?: boolean;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+}
+
+export default function TransactionsTable({ params: initialParams, refetch = false, onEdit, onDelete }: TransactionsTableProps) {
   // Initialize filters with matching default types
   const [filters, setFilters] = useState<any>({
     category: [],
@@ -65,7 +72,7 @@ export default function TransactionsTable({ params: initialParams }: { params: a
     maxAmount: parsedFilters.maxAmount,
     minAmount: parsedFilters.minAmount,
   };
-  const { data, isLoading } = useTransactions(params);
+  const { data, isLoading, refetch: refetchData } = useTransactions(params);
 
   const handleExport = async () => {
     try {
@@ -82,6 +89,13 @@ export default function TransactionsTable({ params: initialParams }: { params: a
       setIsExporting(false);
     }
   };
+
+  // Refetch data if refetch prop is true
+  useEffect(() => {
+    if (refetch) {
+      refetchData();
+    }
+  }, [refetch, refetchData]);
 
   return (
     <>
@@ -110,6 +124,20 @@ export default function TransactionsTable({ params: initialParams }: { params: a
         onFilterChange={(newFilters) => {
           setFilters(newFilters);
           setPage(1);
+        }}
+        onEdit={(id) => {
+          // Handle edit action here
+          console.log("Edit transaction with ID:", id);
+          if (onEdit) {
+            onEdit(id);
+          }
+        }}
+        onDelete={(id) => {
+          // Handle delete action here
+          console.log("Delete transaction with ID:", id);
+          if (onDelete) {
+            onDelete(id);
+          }
         }}
       />
     </>

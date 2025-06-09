@@ -18,7 +18,7 @@ export const transactionsColumns: ColumnDef<any>[] = [
   },
   {
     id: "category",
-    accessorFn: (row) => row.category.name,
+    accessorFn: (row) => row?.category?.name || "-",
     header: "Category",
   },
   {

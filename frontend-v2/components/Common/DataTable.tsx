@@ -42,6 +42,8 @@ interface DataTableProps<TData, TValue> {
   filtersConfig?: FilterConfig[];
   filterValues?: Record<string, any>;
   onFilterChange?: (filters: Record<string, any>) => void;
+  onEdit?: (row: TData) => void;
+  onDelete?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -59,7 +61,57 @@ export function DataTable<TData, TValue>({
   filtersConfig = [],
   filterValues = {},
   onFilterChange,
+  onEdit,
+  onDelete,
 }: DataTableProps<TData, TValue>) {
+  if (onEdit || onDelete) {
+    // Add edit and delete actions to the columns if needed
+    columns = [
+      ...columns,
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }: { row: any }) => (
+          <div className="flex space-x-2">
+            {onEdit && (
+              <Button variant="outline" size="sm" onClick={() => onEdit(row.original.id)}>
+                Edit
+              </Button>
+            )}
+            {onDelete && (
+              <Button variant="destructive" size="sm" onClick={() => onDelete(row.original)}>
+                Delete
+              </Button>
+            )}
+          </div>
+        ),
+      },
+    ];
+  }
+
+  // Add a default column for row selection if needed
+  // {
+  //   id: 'selection',
+  //   header: ({ table }) => (
+  //     <input
+  //       type="checkbox"
+  //       {...{
+  //         checked: table.getIsAllRowsSelected(),
+  //         onChange: table.getToggleAllRowsSelectedHandler(),
+  //       }}
+  //     />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <input
+  //       type="checkbox"
+  //       {...{
+  //         checked: row.getIsSelected(),
+  //         onChange: row.getToggleSelectedHandler(),
+  //       }}
+  //     />
+  //   ),
+  // },
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -262,7 +314,10 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       <div className="flex justify-between items-center py-4">
-        <div className="text-sm text-muted-foreground">{totalRecords} records found</div>
+        <div className="text-sm text-muted-foreground">
+          {/* show starting and ending record numbers */}
+          {totalRecords > 0 ? (currentPage - 1) * 10 + 1 : 0} - {Math.min(currentPage * 10, totalRecords)} of {totalRecords} records
+        </div>
 
         <div className="flex items-center space-x-4">
           <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1}>

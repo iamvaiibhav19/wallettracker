@@ -31,7 +31,7 @@ export const transactionExportColumns: ExportColumn[] = [
   {
     header: "Category",
     key: "category",
-    format: (row) => row.category?.name ?? "-",
+    format: (row) => row?.category?.name ?? "-",
   },
   {
     header: "Type",
