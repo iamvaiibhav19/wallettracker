@@ -181,30 +181,33 @@ export function AddTransactionModal({
   }
 
   useEffect(() => {
-    if (editTransactionId) {
-      (async () => {
-        try {
-          setOpen(true);
-          const data = await getTransactionById({ id: editTransactionId });
+    const fetchDataAndOpen = async () => {
+      if (!editTransactionId) return;
 
-          console.log("Fetched transaction for edit:", data);
-          // clear any previous form state
-          form.reset({
-            amount: data.amount,
-            type: data.type,
-            accountId: data.accountId,
-            categoryId: data.categoryId || "",
-            description: data.description || "",
-            destinationAccountId: data.destinationAccountId || "",
-            targetName: data.targetName || "",
-            reminderDate: data.reminderDate || "",
-            date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
-          });
-        } catch (error) {
-          console.error(error);
-        }
-      })();
-    }
+      try {
+        const res = await getTransactionById({ id: editTransactionId });
+        const data = res.transaction || {};
+
+        form.reset({
+          amount: data.amount || 0,
+          type: data.type || "expense",
+          accountId: data.accountId || "",
+          categoryId: data.categoryId || "",
+          description: data.description || "",
+          destinationAccountId: data.destinationAccountId || "",
+          targetName: data.targetName || "",
+          reminderDate: data.reminderDate || "",
+          date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+        });
+
+        // ✅ Now open the modal AFTER form has correct values
+        setOpen(true);
+      } catch (error) {
+        console.error("Failed to fetch transaction:", error);
+      }
+    };
+
+    fetchDataAndOpen();
   }, [editTransactionId]);
 
   return (
@@ -235,7 +238,7 @@ export function AddTransactionModal({
             });
           }}>
           <PlusCircle className="inline mr-2" />
-          {editTransactionId ? "Edit Transaction" : "Add Transaction"}
+          Add Transaction
         </Button>
       </DialogTrigger>
 

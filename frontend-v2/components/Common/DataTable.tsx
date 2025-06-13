@@ -15,7 +15,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { FilterIcon } from "lucide-react";
+import { FilterIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DatePickerWithRange } from "./DateRangePicker";
 import { MultiSelect } from "./MultiSelect";
@@ -65,24 +65,24 @@ export function DataTable<TData, TValue>({
   onDelete,
 }: DataTableProps<TData, TValue>) {
   if (onEdit || onDelete) {
-    // Add edit and delete actions to the columns if needed
+    // Add edit and delete actions to the columns if callbacks are provided
     columns = [
       ...columns,
       {
         id: "actions",
         header: "Actions",
         cell: ({ row }: { row: any }) => (
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
             {onEdit && (
-              <Button variant="outline" size="sm" onClick={() => onEdit(row.original.id)}>
-                Edit
-              </Button>
+              <PencilIcon
+                className="cursor-pointer w-4 h-5 text-blue-600 hover:text-blue-800"
+                onClick={() => {
+                  onEdit(row.original.id);
+                  console.log("Edit row in datable:", row.original.id);
+                }}
+              />
             )}
-            {onDelete && (
-              <Button variant="destructive" size="sm" onClick={() => onDelete(row.original)}>
-                Delete
-              </Button>
-            )}
+            {onDelete && <TrashIcon className="cursor-pointer w-4 h-5 text-red-600 hover:text-red-800" onClick={() => onDelete(row.original.id)} />}
           </div>
         ),
       },

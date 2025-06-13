@@ -90,7 +90,6 @@ export default function TransactionsTable({ params: initialParams, refetch = fal
     }
   };
 
-  // Refetch data if refetch prop is true
   useEffect(() => {
     if (refetch) {
       refetchData();
@@ -126,15 +125,11 @@ export default function TransactionsTable({ params: initialParams, refetch = fal
           setPage(1);
         }}
         onEdit={(id) => {
-          // Handle edit action here
-          console.log("Edit transaction with ID:", id);
           if (onEdit) {
             onEdit(id);
           }
         }}
         onDelete={(id) => {
-          // Handle delete action here
-          console.log("Delete transaction with ID:", id);
           if (onDelete) {
             onDelete(id);
           }

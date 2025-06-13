@@ -6,6 +6,8 @@ import { useDateRangeStore } from "@/store/customDateRangeStore";
 import { endOfMonth, startOfMonth } from "date-fns";
 import TransactionDataTable from "@/components/Transactions/TransactionsTable";
 import { AddTransactionModal } from "@/components/Transactions/AddTransactionModal";
+import deleteTransaction from "@/config/api/axios/Transactions/deleteTransaction";
+import { toast } from "sonner";
 
 const Page = () => {
   const { range, setRange, setSelectedLabel } = useDateRangeStore();
@@ -24,6 +26,22 @@ const Page = () => {
   const params = {
     startDate: range.from?.toISOString(),
     endDate: range.to?.toISOString(),
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await deleteTransaction({ id });
+
+      if (res) {
+        setRefetch(!refetch);
+      }
+
+      toast.success("Transaction deleted successfully");
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+
+      toast.error("Failed to delete transaction");
+    }
   };
 
   return (
@@ -49,8 +67,8 @@ const Page = () => {
         onEdit={(id) => {
           setEditingTransactionId(id);
         }}
-        onDelete={() => {
-          setRefetch(!refetch);
+        onDelete={(id) => {
+          handleDelete(id);
         }}
       />
     </div>
